@@ -83,8 +83,8 @@ create or replace function test.user_upd(_id integer, _params json)
 $BODY$
 begin
   update test.users set
-    name = _params->>'name',
-    email = _params->>'email'
+    name = coalesce(_params->>'name', name),
+    email = coalesce(_params->>'email', email)
   where id = _id;
 
   return json_build_object('id', _id);
