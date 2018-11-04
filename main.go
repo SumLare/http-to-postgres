@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -66,7 +67,42 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 		usersShow(w, r)
 	case "DELETE":
 		usersDelete(w, r)
+	case "POST":
+		usersCreate(w, r)
 	}
+}
+
+func usersShow(w http.ResponseWriter, r *http.Request) {
+	userId := strings.TrimPrefix(r.URL.Path, "/api/users/")
+	query := fmt.Sprintf("SELECT * FROM test.user_get(%s)", userId)
+	payload := Payload{}
+	err := db.QueryRow(query).Scan(&payload.Data)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		log.Println(err)
+	}
+	user := User{}
+	json.Unmarshal([]byte(payload.Data), &user)
+
+	json.NewEncoder(w).Encode(&user)
+	log.Printf("Found user with id: %s", userId)
+}
+
+func usersCreate(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	query := fmt.Sprintf("SELECT * FROM test.user_ins('%s')", string(body))
+	payload := Payload{}
+	err = db.QueryRow(query).Scan(&payload.Data)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		log.Println(err)
+	}
+
+	fmt.Fprintf(w, fmt.Sprintf(payload.Data))
+	log.Printf("Created user with %s", payload.Data)
 }
 
 func usersDelete(w http.ResponseWriter, r *http.Request) {
@@ -79,20 +115,4 @@ func usersDelete(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintf(w, fmt.Sprintf(`{"id": %s}`, userId))
 	log.Printf("Deleted user with id: %s", userId)
-}
-
-func usersShow(w http.ResponseWriter, r *http.Request) {
-	userId := strings.TrimPrefix(r.URL.Path, "/api/users/")
-	query := fmt.Sprintf("SELECT user_get  FROM test.user_get(%s)", userId)
-	payload := Payload{}
-	err := db.QueryRow(query).Scan(&payload.Data)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		log.Println(err)
-	}
-	user := User{}
-	json.Unmarshal([]byte(payload.Data), &user)
-
-	json.NewEncoder(w).Encode(&user)
-	log.Printf("Found user with id: %s", userId)
 }
