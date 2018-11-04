@@ -69,6 +69,8 @@ func usersHandler(w http.ResponseWriter, r *http.Request) {
 		usersDelete(w, r)
 	case "POST":
 		usersCreate(w, r)
+	case "PUT":
+		usersUpdate(w, r)
 	}
 }
 
@@ -103,6 +105,24 @@ func usersCreate(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintf(w, fmt.Sprintf(payload.Data))
 	log.Printf("Created user with %s", payload.Data)
+}
+
+func usersUpdate(w http.ResponseWriter, r *http.Request) {
+	userId := strings.TrimPrefix(r.URL.Path, "/api/users/")
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	query := fmt.Sprintf("SELECT * FROM test.user_upd(%s, '%s')", userId, string(body))
+	payload := Payload{}
+	err = db.QueryRow(query).Scan(&payload.Data)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		log.Println(err)
+	}
+
+	fmt.Fprintf(w, fmt.Sprintf(payload.Data))
+	log.Printf("Updated user with %s", payload.Data)
 }
 
 func usersDelete(w http.ResponseWriter, r *http.Request) {
