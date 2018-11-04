@@ -4,5 +4,6 @@
   "host": "localhost",
   "user": "postgres",
   "password": "",
-  "schema": "test"
+  "schema": "test",
+  "maxconn": 20
 }

@@ -30,6 +30,7 @@ type Config struct {
 	User     string
 	Password string
 	Schema   string
+	Maxconn  int
 }
 
 var db *sql.DB
@@ -46,10 +47,7 @@ func init() {
 	dbUrl := fmt.Sprintf("host=%s port=%d dbname=postgres user=%s password='%s' sslmode=disable search_path=%s",
 		conf.Host, conf.Port, conf.User, conf.Password, conf.Schema)
 	db, err = sql.Open("postgres", dbUrl)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	db.SetMaxOpenConns(conf.Maxconn)
 	if err = db.Ping(); err != nil {
 		log.Fatal(err)
 	}
